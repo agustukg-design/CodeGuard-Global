@@ -8,7 +8,8 @@ import time
 
 # --- 1. KONFIGURASI API KEY ---
 # ⚠️ PASTE API KEY ANDA DI SINI!
-DEEPSEEK_API_KEY = "sk-5c101eb737fd4defadf6b002001b3a47"
+# MENGAMBIL KUNCI DARI STREAMLIT SECRETS (BRANKAS AMAN)
+DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
 DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions"
 
 # --- 2. SETUP UI ENTERPRISE ---
