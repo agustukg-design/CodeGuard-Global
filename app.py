@@ -6,10 +6,15 @@ import csv
 import os
 import time
 
-# --- 1. KONFIGURASI API KEY ---
-# ⚠️ PASTE API KEY ANDA DI SINI!
-# MENGAMBIL KUNCI DARI STREAMLIT SECRETS (BRANKAS AMAN)
-DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
+# --- 1. KONFIGURASI API KEY (HARDENED SECURITY) ---
+# Mengambil KUNCI DARI STREAMLIT SECRETS (Wajib Terisi di Settings Streamlit!)
+# Jika kunci gagal dimuat, aplikasi tidak akan crash, tapi menampilkan error yang jelas.
+try:
+    DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
+except KeyError:
+    # Set nilai default yang pasti gagal, agar logic error di tombol bisa menangkapnya.
+    DEEPSEEK_API_KEY = "KEY_NOT_FOUND_IN_SECRETS"
+
 DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions"
 
 # --- 2. SETUP UI ENTERPRISE ---
@@ -45,7 +50,6 @@ with st.sidebar:
     st.title("⚡ Speed Control")
     st.markdown("### 🌍 Target Market")
     
-    # PILIHAN BAHASA (PASAR UTAMA)
     target_language = st.selectbox(
         "Client's Region:",
         (
@@ -61,8 +65,13 @@ with st.sidebar:
     )
     
     st.markdown("---")
-    st.success("✅ **Server Status: ONLINE**")
     
+    # STATUS SERVER (HANYA AKAN ON JIKA API KEY VALID)
+    if DEEPSEEK_API_KEY != "KEY_NOT_FOUND_IN_SECRETS":
+        st.success("✅ **Server Status: ONLINE**")
+    else:
+        st.error("❌ **Server Status: OFFLINE (API Key Missing)**")
+
     # STATISTIK BISNIS REAL-TIME
     if os.path.isfile("business_data.csv"):
         st.markdown("### 📊 Business Performance")
@@ -77,7 +86,6 @@ with col1:
     st.markdown(f'<p class="sub-header">AI-Powered Rapid Security Audit & Optimization Engine</p>', unsafe_allow_html=True)
 
 with col2:
-    # Tampilan visual "Kecepatan"
     st.markdown("### 🚀 Speed Mode")
     st.caption("Latency: < 9s Optimized")
 
@@ -92,8 +100,6 @@ code_input = st.text_area(
 def get_audit_result(code_snippet, language):
     if not code_snippet: return None, "⚠️ Empty Code"
     
-    # PROMPT DIOPTIMALKAN UNTUK KECEPATAN (CONCISE)
-    # Kita minta AI langsung memberikan hasil tanpa berpikir terlalu panjang
     master_prompt = f"""
     ROLE: Senior Code Auditor.
     TASK: Audit this code for Fatal Bugs, Security Risks, and Performance.
@@ -132,24 +138,27 @@ def get_audit_result(code_snippet, language):
     except Exception as e:
         return None, str(e)
 
-# --- 8. ACTION BUTTON (DENGAN TIMER) ---
+# --- 8. ACTION BUTTON (DENGAN TIMER & KEAMANAN AKHIR) ---
 if st.button("🚀 INSTANT AUDIT (START)", type="primary"):
-    if "YOUR_DEEPSEEK_API_KEY" in DEEPSEEK_API_KEY:
-        st.error("❌ ERROR: Masukkan API Key di app.py!")
+    
+    # ⚠️ KEAMANAN: Cek apakah API Key berhasil dimuat dari brankas
+    if DEEPSEEK_API_KEY == "KEY_NOT_FOUND_IN_SECRETS":
+        st.error("❌ ERROR SISTEM: API Key Belum TERSIMPAN di Streamlit Secrets. Silakan cek Advanced Settings!")
+        st.stop()
+
+    start_time = time.time()
+    
+    with st.spinner(f"⚡ Processing logic in {target_language}..."):
+        result, error = get_audit_result(code_input, target_language)
+        
+    end_time = time.time()
+    duration = end_time - start_time
+    
+    if error:
+        st.error(f"System Error: {error}")
+        log_activity(target_language, "FAILED", len(code_input), duration)
     else:
-        start_time = time.time() # Mulai Hitung Waktu
-        
-        with st.spinner(f"⚡ Processing logic in {target_language}..."):
-            result, error = get_audit_result(code_input, target_language)
-            
-        end_time = time.time() # Selesai Hitung Waktu
-        duration = end_time - start_time
-        
-        if error:
-            st.error(f"System Error: {error}")
-            log_activity(target_language, "FAILED", len(code_input), duration)
-        else:
-            # Tampilkan Hasil
-            st.success(f"✅ Audit Complete in {duration:.2f} seconds!")
-            st.markdown(result)
-            log_activity(target_language, "SUCCESS", len(code_input), duration)
+        # Tampilkan Hasil
+        st.success(f"✅ Audit Complete in {duration:.2f} seconds!")
+        st.markdown(result)
+        log_activity(target_language, "SUCCESS", len(code_input), duration)
