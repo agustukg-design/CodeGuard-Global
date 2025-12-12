@@ -17,13 +17,13 @@ except KeyError:
 
 DEEPSEEK_ENDPOINT = "https://api.deepseek.com/chat/completions"
 
-# --- 2. SETUP UI ENTERPRISE ---
+# ... (Baris 15)
 st.set_page_config(
     layout="wide", 
-    page_title="CodeGuard Global | Enterprise Audit",
+    page_title="Python Code Audit: Fix Bugs, Security & Performance Optimizer AI", # <--- GANTI BARIS INI (17)
     page_icon="⚡"
 )
-
+# ...
 # CSS untuk Tampilan Premium & Cepat
 st.markdown("""
 <style>
